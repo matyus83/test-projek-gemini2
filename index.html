@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pendaftaran Sukan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font - Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for disabled button */
+        .btn-disabled {
+            background-color: #9ca3af !important; /* Tailwind gray-400 */
+            color: #4b5563 !important; /* Tailwind gray-700 */
+            cursor: not-allowed !important;
+            transform: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
+
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 hover:shadow-3xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Sistem Pendaftaran Sukan</h1>
+
+        <!-- Registration Form Section -->
+        <div class="mb-8 p-6 bg-blue-50 rounded-lg shadow-inner">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Daftar Peserta Baru</h2>
+            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">Ralat!</strong>
+                <span id="error-text" class="block sm:inline"></span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                    <input
+                        type="text"
+                        id="name"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out rounded-lg"
+                        placeholder="Masukkan nama peserta"
+                    />
+                </div>
+                <div>
+                    <label for="school" class="block text-sm font-medium text-gray-700 mb-1">Nama Sekolah</label>
+                    <input
+                        type="text"
+                        id="school"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out rounded-lg"
+                        placeholder="Masukkan nama sekolah"
+                    />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="sport" class="block text-sm font-medium text-gray-700 mb-1">Penyertaan Sukan</label>
+                    <input
+                        type="text"
+                        id="sport"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out rounded-lg"
+                        placeholder="Contoh: Bola Sepak, Badminton"
+                    />
+                </div>
+                <div>
+                    <label for="achievement" class="block text-sm font-medium text-gray-700 mb-1">Pencapaian</label>
+                    <input
+                        type="text"
+                        id="achievement"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out rounded-lg"
+                        placeholder="Contoh: Johan Negeri, Naib Juara Daerah"
+                    />
+                </div>
+            </div>
+            <button
+                id="add-participant-btn"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                Tambah Peserta
+            </button>
+        </div>
+
+        <!-- Registered Participants List Section -->
+        <div class="mb-8 p-6 bg-white rounded-lg shadow-inner border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Senarai Peserta Berdaftar</h2>
+            <ul id="participants-list" class="divide-y divide-gray-200">
+                <p id="no-participants-text" class="text-gray-500 text-center italic">Tiada peserta berdaftar lagi.</p>
+            </ul>
+        </div>
+
+        <!-- PDF Generation Button -->
+        <button
+            id="generate-pdf-btn"
+            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            disabled
+        >
+            Memuatkan Pustaka PDF...
+        </button>
+    </div>
+
+    <!-- jsPDF library is loaded here so it's globally available -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        // Array to store registered participants
+        let participants = [];
+
+        // Get DOM elements
+        const nameInput = document.getElementById('name');
+        const schoolInput = document.getElementById('school');
+        const sportInput = document.getElementById('sport');
+        const achievementInput = document.getElementById('achievement');
+        const addParticipantBtn = document.getElementById('add-participant-btn');
+        const participantsList = document.getElementById('participants-list');
+        const noParticipantsText = document.getElementById('no-participants-text');
+        const generatePdfBtn = document.getElementById('generate-pdf-btn');
+        const errorMessageDiv = document.getElementById('error-message');
+        const errorTextSpan = document.getElementById('error-text');
+
+        // Function to display error message
+        function displayError(message) {
+            errorTextSpan.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+
+        // Function to hide error message
+        function hideError() {
+            errorMessageDiv.classList.add('hidden');
+            errorTextSpan.textContent = '';
+        }
+
+        // Function to render participants list
+        function renderParticipants() {
+            participantsList.innerHTML = ''; // Clear existing list
+            if (participants.length === 0) {
+                participantsList.appendChild(noParticipantsText);
+                noParticipantsText.classList.remove('hidden');
+            } else {
+                noParticipantsText.classList.add('hidden');
+                participants.forEach((p) => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'py-4 px-3 hover:bg-gray-50 rounded-md transition duration-150 ease-in-out';
+                    listItem.innerHTML = `
+                        <p class="text-lg font-medium text-gray-900">${p.name}</p>
+                        <p class="text-sm text-gray-600">Sekolah: ${p.school}</p>
+                        <p class="text-sm text-gray-600">Sukan: ${p.sport}</p>
+                        <p class="text-sm text-gray-600">Pencapaian: ${p.achievement}</p>
+                    `;
+                    participantsList.appendChild(listItem);
+                });
+            }
+        }
+
+        // Event listener for adding a participant
+        addParticipantBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            const school = schoolInput.value.trim();
+            const sport = sportInput.value.trim();
+            const achievement = achievementInput.value.trim();
+
+            if (!name || !school || !sport || !achievement) {
+                displayError('Sila isikan semua ruangan yang wajib.');
+                return;
+            }
+
+            hideError(); // Hide error if all fields are filled
+
+            const newParticipant = {
+                id: Date.now(),
+                name,
+                school,
+                sport,
+                achievement,
+            };
+
+            participants.push(newParticipant);
+            renderParticipants(); // Re-render the list
+
+            // Clear form fields
+            nameInput.value = '';
+            schoolInput.value = '';
+            sportInput.value = '';
+            achievementInput.value = '';
+        });
+
+        // Event listener for generating PDF
+        generatePdfBtn.addEventListener('click', () => {
+            if (participants.length === 0) {
+                displayError('Tiada data peserta untuk dijana PDF.');
+                return;
+            }
+
+            hideError();
+
+            // Access jsPDF from the global window object
+            const doc = new window.jspdf.jsPDF();
+
+            doc.setFontSize(18);
+            doc.text('Laporan Pendaftaran Peserta Sukan', 14, 22);
+
+            doc.setFontSize(12);
+            let yPos = 30;
+
+            doc.line(14, yPos + 2, 196, yPos + 2);
+            yPos += 10;
+
+            participants.forEach((p, index) => {
+                if (yPos > 280) {
+                    doc.addPage();
+                    yPos = 14;
+                }
+                doc.text(`${index + 1}. Nama: ${p.name}`, 14, yPos);
+                doc.text(`   Nama Sekolah: ${p.school}`, 14, yPos + 7);
+                doc.text(`   Penyertaan Sukan: ${p.sport}`, 14, yPos + 14);
+                doc.text(`   Pencapaian: ${p.achievement}`, 14, yPos + 21);
+                yPos += 30;
+                doc.line(14, yPos - 5, 196, yPos - 5);
+            });
+
+            doc.save('Laporan_Pendaftaran_Sukan.pdf');
+        });
+
+        // Function to check if jsPDF library is loaded and enable the PDF button
+        function checkJsPdfLoaded() {
+            if (window.jspdf && window.jspdf.jsPDF) {
+                generatePdfBtn.disabled = false;
+                generatePdfBtn.textContent = 'Jana PDF Laporan Pendaftaran';
+                generatePdfBtn.classList.remove('btn-disabled'); // Remove custom disabled class
+                generatePdfBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white', 'focus:ring-green-500');
+            } else {
+                // If not loaded yet, check again after a short delay
+                setTimeout(checkJsPdfLoaded, 100);
+            }
+        }
+
+        // Initial render of participants list
+        renderParticipants();
+
+        // Start checking for jsPDF loading once the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', checkJsPdfLoaded);
+    </script>
+</body>
+</html>
